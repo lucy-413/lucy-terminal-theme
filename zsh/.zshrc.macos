@@ -1,0 +1,38 @@
+# Lucy Terminal Theme: macOS, Oh My Zsh and Powerlevel10k.
+# Put startup code that may ask for input above the instant-prompt block.
+
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Make the CLI available when WezTerm.app was installed outside Homebrew.
+if [[ -d /Applications/WezTerm.app/Contents/MacOS ]]; then
+  typeset -U path PATH
+  path=(/Applications/WezTerm.app/Contents/MacOS $path)
+  export PATH
+fi
+
+export ZSH="$HOME/.oh-my-zsh"
+local_p10k_dir="${ZSH_CUSTOM:-$ZSH/custom}/themes/powerlevel10k"
+
+if [[ -r "$local_p10k_dir/powerlevel10k.zsh-theme" ]]; then
+  ZSH_THEME="powerlevel10k/powerlevel10k"
+else
+  ZSH_THEME=""
+fi
+
+plugins=(
+  git
+)
+
+if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
+  source "$ZSH/oh-my-zsh.sh"
+else
+  print -u2 'Lucy theme: Oh My Zsh is not installed at ~/.oh-my-zsh.'
+fi
+
+if [[ -r "$local_p10k_dir/powerlevel10k.zsh-theme" && -r "$HOME/.p10k.zsh" ]]; then
+  source "$HOME/.p10k.zsh"
+fi
+
+unset local_p10k_dir

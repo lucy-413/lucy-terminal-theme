@@ -15,6 +15,7 @@ height="${BASH_REMATCH[2]}"
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source_svg="${project_dir}/kitty/assets/crt-overlay.svg"
 output_png="${project_dir}/kitty/assets/crt-overlay.png"
+wezterm_output_png="${project_dir}/wezterm/assets/crt-overlay.png"
 
 if ! command -v rsvg-convert >/dev/null 2>&1; then
   printf 'rsvg-convert is required to render the CRT overlay.\n' >&2
@@ -41,7 +42,7 @@ bleed_pos=$((-bleed))
 bleed_width=$((width + 2 * bleed))
 bleed_height=$((height + 2 * bleed))
 
-temporary_svg="$(mktemp --suffix=.svg)"
+temporary_svg="$(mktemp "${TMPDIR:-/tmp}/lucy-crt-overlay.XXXXXX")"
 trap 'rm -f -- "$temporary_svg"' EXIT
 
 sed \
@@ -58,10 +59,12 @@ sed \
   -e "s/@BLEED_H@/${bleed_height}/g" \
   "$source_svg" > "$temporary_svg"
 
-if rg -q '@[A-Z_]+' "$temporary_svg"; then
+if grep -Eq '@[A-Z_]+' "$temporary_svg"; then
   printf 'The rendered SVG still contains unresolved template tokens.\n' >&2
   exit 1
 fi
 
 rsvg-convert -w "$width" -h "$height" -o "$output_png" "$temporary_svg"
-printf 'Rendered %s from the LucyGRUB CRT SVG.\n' "$output_png"
+mkdir -p "$(dirname "$wezterm_output_png")"
+install -m 0644 "$output_png" "$wezterm_output_png"
+printf 'Rendered the Kitty and WezTerm PNG assets from the LucyGRUB CRT SVG.\n'

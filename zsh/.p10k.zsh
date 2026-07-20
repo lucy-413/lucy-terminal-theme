@@ -403,10 +403,10 @@
 
     # Styling for different parts of Git status.
     local       meta='%F{#A4133C}' # crimson metadata
-    local      clean='%F{#FB6F92}' # hot-pink branch and clean state
+    local      clean='%F{#A4133C}' # crimson branch and clean state
     local   modified='%F{#E6D1D7}' # readable blush for changes
     local  untracked='%F{#A4133C}' # crimson untracked state
-    local conflicted='%F{#FB6F92}' # high-contrast conflict state
+    local conflicted='%F{#A4133C}' # crimson conflict state
 
     local res
 
@@ -1837,7 +1837,7 @@
   # really need it.
   typeset -g POWERLEVEL9K_DISABLE_HOT_RELOAD=true
 
-  # LucyGRUB terminal palette: black surfaces, crimson structure, hot-pink focus.
+  # LucyGRUB prompt palette: black surfaces with crimson text and structure.
   typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX='%F{#A4133C}╭─%f'
   typeset -g POWERLEVEL9K_MULTILINE_NEWLINE_PROMPT_PREFIX='%F{#A4133C}├─%f'
   typeset -g POWERLEVEL9K_MULTILINE_LAST_PROMPT_PREFIX='%F{#A4133C}╰─%f'
@@ -1855,27 +1855,27 @@
 
   # One RGB step away from Kitty's transparent #1A1A1A default, so the pill body stays opaque.
   typeset -g POWERLEVEL9K_DIR_BACKGROUND='#1B1A1A'
-  typeset -g POWERLEVEL9K_DIR_FOREGROUND='#FB6F92'
+  typeset -g POWERLEVEL9K_DIR_FOREGROUND='#A4133C'
   typeset -g POWERLEVEL9K_DIR_SHORTENED_FOREGROUND='#A4133C'
-  typeset -g POWERLEVEL9K_DIR_ANCHOR_FOREGROUND='#FB6F92'
+  typeset -g POWERLEVEL9K_DIR_ANCHOR_FOREGROUND='#A4133C'
 
   typeset -g POWERLEVEL9K_VCS_{CLEAN,MODIFIED,UNTRACKED,CONFLICTED,LOADING}_BACKGROUND='#1B1A1A'
 
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_OK_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND='#FB6F92'
+  typeset -g POWERLEVEL9K_PROMPT_CHAR_OK_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND='#A4133C'
   typeset -g POWERLEVEL9K_PROMPT_CHAR_ERROR_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND='#A4133C'
 
   typeset -g POWERLEVEL9K_STATUS_OK_FOREGROUND='#A4133C'
   typeset -g POWERLEVEL9K_STATUS_OK_PIPE_FOREGROUND='#A4133C'
-  typeset -g POWERLEVEL9K_STATUS_ERROR_FOREGROUND='#FB6F92'
-  typeset -g POWERLEVEL9K_STATUS_ERROR_SIGNAL_FOREGROUND='#FB6F92'
-  typeset -g POWERLEVEL9K_STATUS_ERROR_PIPE_FOREGROUND='#FB6F92'
+  typeset -g POWERLEVEL9K_STATUS_ERROR_FOREGROUND='#A4133C'
+  typeset -g POWERLEVEL9K_STATUS_ERROR_SIGNAL_FOREGROUND='#A4133C'
+  typeset -g POWERLEVEL9K_STATUS_ERROR_PIPE_FOREGROUND='#A4133C'
   typeset -g POWERLEVEL9K_STATUS_{OK,OK_PIPE,ERROR,ERROR_SIGNAL,ERROR_PIPE}_BACKGROUND='#1B1A1A'
   typeset -g POWERLEVEL9K_STATUS_RIGHT_PROMPT_FIRST_SEGMENT_START_SYMBOL='\uE0B6'
   typeset -g POWERLEVEL9K_STATUS_RIGHT_PROMPT_LAST_SEGMENT_END_SYMBOL='\uE0B4'
 
   typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND='#A4133C'
   typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_BACKGROUND='#1B1A1A'
-  typeset -g POWERLEVEL9K_BACKGROUND_JOBS_FOREGROUND='#FB6F92'
+  typeset -g POWERLEVEL9K_BACKGROUND_JOBS_FOREGROUND='#A4133C'
   typeset -g POWERLEVEL9K_BACKGROUND_JOBS_BACKGROUND='#1B1A1A'
   typeset -g POWERLEVEL9K_VIRTUALENV_FOREGROUND='#E6D1D7'
   typeset -g POWERLEVEL9K_VIRTUALENV_BACKGROUND='#1B1A1A'
