@@ -4,6 +4,18 @@ local act = wezterm.action
 local config = wezterm.config_builder()
 config:set_strict_mode(true)
 
+local config_home = os.getenv 'XDG_CONFIG_HOME'
+if not config_home or #config_home == 0 then
+  config_home = wezterm.home_dir .. '/.config'
+end
+local installed_config_dir = config_home .. '/wezterm'
+
+-- Load bundled/user-installed fonts directly. This also works when macOS
+-- CoreText hasn't registered a newly copied font yet.
+config.font_dirs = {
+  wezterm.home_dir .. '/Library/Fonts',
+}
+
 local palette = {
   background = '#1A1A1A',
   strip = '#101010',
@@ -66,7 +78,7 @@ config.color_schemes = {
       },
       inactive_tab = {
         bg_color = palette.background,
-        fg_color = palette.muted,
+        fg_color = palette.wine,
       },
       inactive_tab_hover = {
         bg_color = palette.background,
@@ -85,25 +97,37 @@ config.color_schemes = {
 }
 config.color_scheme = 'LucyGRUB Crimson'
 
--- Keep the image layer transparent: an opaque layer would hide the macOS blur.
-config.window_background_opacity = 0.92
+-- Keep the base opaque so macOS Spaces/fullscreen never fall through to a
+-- black compositor backdrop. The layers below provide the glass treatment.
+config.window_background_opacity = 1.0
 config.macos_window_background_blur = 32
 config.background = {
   {
+    -- A stable crimson wash keeps the theme warm in both windowed and
+    -- fullscreen modes, independently of whatever is behind the window.
+    source = { Color = palette.wine },
+    width = '100%',
+    height = '100%',
+    opacity = 0.10,
+  },
+  {
     source = {
-      File = wezterm.config_dir .. '/assets/crt-overlay.png',
+      File = installed_config_dir .. '/assets/crt-overlay.png',
     },
     attachment = 'Fixed',
     repeat_x = 'NoRepeat',
     repeat_y = 'NoRepeat',
     width = '100%',
     height = '100%',
-    opacity = 0.22,
+    -- Preserve the scanlines and bloom without letting the black vignette
+    -- crush the fullscreen background.
+    opacity = 0.42,
   },
 }
 
 config.window_decorations = 'INTEGRATED_BUTTONS|RESIZE|MACOS_FORCE_ENABLE_SHADOW'
 config.integrated_title_button_style = 'MacOsNative'
+config.integrated_title_button_alignment = 'Left'
 config.window_padding = {
   left = 12,
   right = 12,
@@ -117,7 +141,9 @@ config.tab_bar_at_bottom = false
 config.hide_tab_bar_if_only_one_tab = false
 config.show_new_tab_button_in_tab_bar = false
 config.show_tab_index_in_tab_bar = false
-config.tab_max_width = 32
+local max_tab_width = 32
+local macos_title_button_cells = 9
+config.tab_max_width = max_tab_width
 
 local left_cap = ''
 local right_cap = ''
@@ -130,7 +156,7 @@ local function tab_title(tab)
 end
 
 wezterm.on('format-tab-title', function(tab, tabs, panes, cfg, hover, max_width)
-  local foreground = palette.muted
+  local foreground = palette.wine
   local intensity = 'Normal'
   if tab.is_active then
     foreground = palette.wine
@@ -139,25 +165,76 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, cfg, hover, max_width)
     foreground = palette.pink
   end
 
+  local is_first = tab.tab_index == 0
+  local is_last = tab.tab_index == #tabs - 1
+  local edge_width = (is_first and 1 or 0) + (is_last and 1 or 0)
   local prefix = tostring(tab.tab_index + 1) .. '  '
   local title = wezterm.truncate_right(
     tab_title(tab),
-    math.max(1, max_width - #prefix - 5)
+    math.max(1, max_width - wezterm.column_width(prefix) - edge_width - 2)
   )
 
-  return {
+  local elements = {}
+  if is_first then
+    table.insert(elements, { Background = { Color = palette.strip } })
+    table.insert(elements, { Foreground = { Color = palette.background } })
+    table.insert(elements, { Text = left_cap })
+  end
+
+  table.insert(elements, { Background = { Color = palette.background } })
+  table.insert(elements, { Foreground = { Color = foreground } })
+  table.insert(elements, { Attribute = { Intensity = intensity } })
+  table.insert(elements, { Text = ' ' .. prefix .. title .. ' ' })
+
+  if is_last then
+    table.insert(elements, { Background = { Color = palette.strip } })
+    table.insert(elements, { Foreground = { Color = palette.background } })
+    table.insert(elements, { Text = right_cap })
+  end
+  table.insert(elements, 'ResetAttributes')
+
+  return elements
+end)
+
+local function mux_tab_title(tab)
+  local title = tab:get_title()
+  if title and #title > 0 then
+    return title
+  end
+  return tab:active_pane():get_title()
+end
+
+-- WezTerm has no tab_bar_align option, so reserve the exact number of cells
+-- needed to center the complete capsule, like Kitty's `tab_bar_align center`.
+wezterm.on('update-status', function(window, pane)
+  local mux_window = window:mux_window()
+  local tabs = mux_window:tabs()
+  local active_tab = mux_window:active_tab()
+  if not active_tab or #tabs == 0 then
+    window:set_left_status ''
+    return
+  end
+
+  local capsule_width = 0
+  for index, tab in ipairs(tabs) do
+    local edge_width = (index == 1 and 1 or 0) + (index == #tabs and 1 or 0)
+    local label = tostring(index) .. '  ' .. mux_tab_title(tab)
+    local natural_width = wezterm.column_width(label) + edge_width + 2
+    capsule_width = capsule_width + math.min(max_tab_width, natural_width)
+  end
+
+  local tab_size = active_tab:get_size()
+  local window_size = window:get_dimensions()
+  local cell_width = tab_size.pixel_width / tab_size.cols
+  local tab_bar_columns = math.floor(window_size.pixel_width / cell_width)
+  local left_padding = math.max(
+    0,
+    math.floor((tab_bar_columns - capsule_width) / 2) - macos_title_button_cells
+  )
+  window:set_left_status(wezterm.format {
     { Background = { Color = palette.strip } },
-    { Foreground = { Color = palette.background } },
-    { Text = left_cap },
-    { Background = { Color = palette.background } },
-    { Foreground = { Color = foreground } },
-    { Attribute = { Intensity = intensity } },
-    { Text = ' ' .. prefix .. title .. ' ' },
-    { Background = { Color = palette.strip } },
-    { Foreground = { Color = palette.background } },
-    { Text = right_cap .. ' ' },
-    'ResetAttributes',
-  }
+    { Text = string.rep(' ', left_padding) },
+  })
 end)
 
 config.keys = {
